@@ -1,6 +1,8 @@
 #!/usr/bin/env python
 
+import sys
 import time
+import argparse
 import multiprocessing
 
 import flask
@@ -85,18 +87,32 @@ def monitor():
     return flask.jsonify(count=count, t=t, dt1=dt1, dt2=dt2)
 
 
-if __name__ == '__main__':
+def main():
+    parser = argparse.ArgumentParser(
+        description='Rowing machine user interface',
+        formatter_class=argparse.ArgumentDefaultsHelpFormatter)
+    parser.add_argument('-v', '--verbose', action='store_true', help='be verbose')
+    parser.add_argument('-t', '--test', action='store_true', help='local testing mode')
+    parser.add_argument('-d', '--debug', action='store_true', help='run flask app in debug mode')
+    args = parser.parse_args()
 
-    # Start the background process that monitors the rowing machine.
-    try:
-        # Use GPIO to monitor the rowing machine.
-        import RPi.GPIO as GPIO
-        p = SwitchMonitor(q)
-    except ImportError:
-        # Start a background process that simulates the rowing machine.
+    # Initialize the background process to monitor the rowing machine.
+    if args.test:
         p = Simulator(q)
-
+    else:
+        try:
+            # Use GPIO to monitor the rowing machine.
+            import RPi.GPIO as GPIO
+            p = SwitchMonitor(q)
+        except ImportError:
+            print('Cannot import GPIO library. Are you running on a raspberry pi?')
+            return -1
     p.start()
 
     # Start the web server.
-    app.run(host='0.0.0.0', port=80)
+    host,  port = (None, None) if args.test else ('0.0.0.0', 80)
+    app.run(host=host, port=port, debug=args.debug)
+
+
+if __name__ == '__main__':
+    sys.exit(main())
