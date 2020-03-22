@@ -17,19 +17,20 @@ function update_time() {
 }
 
 function update_data(data) {
-    last_count = data["count"];
-    $("#COUNT").text(last_count - start_count);
+    last_count = data.count;
+    $("#COUNT").text(Math.round((last_count-start_count)/2, 0));
 }
 
 function fetch() {
-    console.log('fetch');
     // Look for new data.
     $.ajax({
         url: 'monitor',
         dataType: 'json',
-        //timeout: 250,
+        timeout: 250,
         success: function(data) {
-            update_data(data)
+            if(data.count != undefined) {
+                update_data(data);
+            }
         },
         error: function(jqxhr, status) {
             console.log('ERROR', status);

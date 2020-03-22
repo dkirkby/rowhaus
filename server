@@ -4,6 +4,7 @@ import sys
 import time
 import argparse
 import multiprocessing
+import queue
 
 import flask
 
@@ -82,9 +83,11 @@ q = multiprocessing.Queue(maxsize=16)
 
 @app.route('/monitor')
 def monitor():
-    # Wait for the next queue entry if necessary
-    count, t, dt1, dt2 = q.get()
-    return flask.jsonify(count=count, t=t, dt1=dt1, dt2=dt2)
+    try:
+        count, t, dt1, dt2 = q.get(block=False)
+        return flask.jsonify(count=count, t=t, dt1=dt1, dt2=dt2)
+    except queue.Empty:
+        return flask.jsonify({})
 
 
 def main():
