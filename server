@@ -48,10 +48,16 @@ class SwitchMonitor(multiprocessing.Process):
 
 
 app = flask.Flask(__name__, static_url_path='')
+#app.debug = True
 
 @app.route('/')
 def root():
     return app.send_static_file('index.html')
+
+#@app.route('/<path:filename>', methods=['GET'])
+#def getfile(filename):
+#    print('Sending
+#    return app.send_from_directory('', filename)
 
 
 if __name__ == '__main__':
