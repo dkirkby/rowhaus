@@ -1,11 +1,36 @@
 #!/usr/bin/python3
 
 import time
-import argparse
 import multiprocessing
 
 import flask
 
+
+class Simulator(multiprocessing.Process):
+
+    def __init__(self, queue):
+        multiprocessing.Process.__init__(self)
+        self.exit = multiprocessing.Event()
+        self.queue = queue
+        self.count = 0
+
+    def run(self):
+        while not self.exit.is_set():
+            now = time.time()
+            delay = 1.
+            time.sleep(delay)
+            payload = (self.count, now, delay, 0.05 * delay)
+            if self.queue.full():
+                self.queue.get()
+            self.queue.put(payload)
+            print(payload)
+            self.count += 1
+        self.queue.close()
+        print('closed')
+
+    def shutdown(self):
+        self.exit.set()
+        
 
 class SwitchMonitor(multiprocessing.Process):
 
@@ -29,7 +54,9 @@ class SwitchMonitor(multiprocessing.Process):
         new_time = time.time()
         if new_state == 1 and self.last_state == 0:
             # Calculate elapsed times.
-            payload = self.count, new_time - self.last_time[1], new_time - self.last_time[0]
+            payload = self.count, new_time, new_time - self.last_time[1], new_time - self.last_time[0]
+            if self.queue.full():
+                self.queue.get()
             self.queue.put(payload)
             self.count += 1
         self.last_time[new_state] = new_time
@@ -38,8 +65,7 @@ class SwitchMonitor(multiprocessing.Process):
     def run(self):
         GPIO.add_event_detect(self.SWITCH, GPIO.BOTH, callback=self.edge, bouncetime=1)
         while not self.exit.is_set():
-            print('tick')
-            time.sleep(1)
+            time.sleep(10)
         self.queue.close()
         print('closed')
 
@@ -48,37 +74,32 @@ class SwitchMonitor(multiprocessing.Process):
 
 
 app = flask.Flask(__name__, static_url_path='')
-#app.debug = True
 
 @app.route('/')
 def root():
     return app.send_static_file('index.html')
 
-#@app.route('/<path:filename>', methods=['GET'])
-#def getfile(filename):
-#    print('Sending
-#    return app.send_from_directory('', filename)
+q = multiprocessing.Queue(maxsize=16)
+
+@app.route('/monitor')
+def monitor():
+    # Wait for the next queue entry if necessary
+    count, t, dt1, dt2 = q.get()
+    return flask.jsonify(count=count, t=t, dt1=dt1, dt2=dt2)
 
 
 if __name__ == '__main__':
-    '''
-    import RPi.GPIO as GPIO
-    # Start the background process that monitors the rowing machine.
-    q = multiprocessing.Queue()
-    p = SwitchMonitor(q)
-    p.start()
-    '''
 
+    # Start the background process that monitors the rowing machine.    
+    try:
+        # Use GPIO to monitor the rowing machine.
+        import RPi.GPIO as GPIO
+        p = SwitchMonitor(q)
+    except ImportError:
+        # Start a background process that simulates the rowing machine.
+        p = Simulator(q)
+
+    p.start()
+        
     # Start the web server.
     app.run(host='0.0.0.0', port=80)
-
-    '''
-    try:
-        while True:
-            count, t1, t2 = q.get()
-            print(count, t1, t2)
-    except KeyboardInterrupt:
-       p.shutdown()
-       p.join()
-       print('bye')
-    '''
