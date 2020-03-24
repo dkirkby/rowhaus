@@ -113,7 +113,7 @@ def monitor():
 
 @app.route('/reset')
 def reset():
-    print('Parenting sending reset')
+    print('Parent sending reset')
     proc.reset()
     return ''
 

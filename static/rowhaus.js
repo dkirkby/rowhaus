@@ -4,6 +4,8 @@ var last_dt1 = null;
 var dt1_history = null;
 const max_history = 100;
 const avg_cycles = 6;
+var graph_data = null;
+var graph = null;
 
 function zeropad(value) {
     return (value < 10) ? "0" + value : "" + value;
@@ -19,7 +21,7 @@ function update_time() {
 function update_data(data) {
     count++;
     $("#COUNT").text(Math.round(count/2, 0));
-    if(dt1_history.length == max_history) {
+    if(dt1_history.length == avg_cycles) {
         // Remove the oldest entry from the front.
         dt1_history.shift();
     }
@@ -31,6 +33,9 @@ function update_data(data) {
             (acc, val) => acc + val, 0);
         let spm = 30 * avg_cycles / sum;
         $("#SPM").text(spm.toFixed(1));
+        // Update the graph.
+        graph_data.push({x: count, y: spm});
+        graph.render();
     }
 }
 
@@ -61,6 +66,14 @@ function reset() {
             $("#COUNT").text('0');
             $("#SPM").text('0.0');
             dt1_history = [];
+            graph_data = [];
+            graph = new CanvasJS.Chart("graph", {
+                theme: "light2",
+                data: [{
+                    type: "line",
+                    dataPoints: graph_data
+                }]
+            });
         }
     });
     console.log('reset at', start_time);
