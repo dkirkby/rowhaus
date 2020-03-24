@@ -1,12 +1,8 @@
 var start_time = null;
-var last_count = 0;
-var start_count = null;
+var count = null;
 
 function zeropad(value) {
-    if(value < 10) {
-        return "0" + value;
-    }
-    return "" + value;
+    return (value < 10) ? "0" + value : "" + value;
 }
 
 function update_time() {
@@ -17,8 +13,8 @@ function update_time() {
 }
 
 function update_data(data) {
-    last_count = data.count;
-    $("#COUNT").text(Math.round((last_count-start_count)/2, 0));
+    count++;
+    $("#COUNT").text(Math.round(count/2, 0));
 }
 
 function fetch() {
@@ -28,7 +24,8 @@ function fetch() {
         dataType: 'json',
         timeout: 250,
         success: function(data) {
-            if(data.count != undefined) {
+            console.log(data);
+            if(data.dt1 != undefined) {
                 update_data(data);
             }
         },
@@ -39,15 +36,23 @@ function fetch() {
 }
 
 function reset() {
-    start_time = new Date();
-    start_count = last_count;
+    $.get({
+        url: 'reset',
+        success: function(data) {
+            start_time = new Date();
+            update_time();
+            count = 0;
+            $("#COUNT").text('0');
+        }
+    });
     console.log('reset at', start_time);
 }
 
 function run() {
     reset();
-    var fetcher = setInterval(fetch, 500);
+    $("#reset").click(reset);
+    var fetcher = setInterval(fetch, 1000);
     var timer = setInterval(update_time, 1000);
 }
 
-$( document ).ready(run);
+$(document).ready(run);

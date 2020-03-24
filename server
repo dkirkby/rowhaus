@@ -9,28 +9,49 @@ import queue
 import flask
 
 
-class Simulator(multiprocessing.Process):
-
+class RowerProcess(multiprocessing.Process):
+    """Base class for a subprocess to read and transmit rowing machine state.
+    """
     def __init__(self, queue):
         multiprocessing.Process.__init__(self)
-        self.exit = multiprocessing.Event()
         self.queue = queue
+        self.running = multiprocessing.Event()
+        self.running.clear()
         self.count = 0
 
-    def run(self):
-        while not self.exit.is_set():
-            now = time.time()
-            delay = 1.
-            time.sleep(delay)
-            payload = (self.count, now, delay, 0.05 * delay)
+    def send(self, payload):
+        """Send a new payload from the child process."""
+        # Do nothing unless we are in the running state.
+        if self.running.is_set():
             if self.queue.full():
+                # Remove the oldest queue entry to make space for this new one.
                 self.queue.get()
             self.queue.put(payload)
             self.count += 1
-        self.queue.close()
 
-    def shutdown(self):
-        self.exit.set()
+    def reset(self):
+        """Called by the parent process to reset the child."""
+        print('Resetting child')
+        self.running.clear()
+        # Drain the queue.
+        while not self.queue.empty():
+            self.queue.get()
+        self.running.set()
+
+
+class Simulator(RowerProcess):
+
+    def __init__(self, queue):
+        RowerProcess.__init__(self, queue)
+
+    def run(self):
+        # Generate a continuous stream of periodic updates.
+        while True:
+            now = time.time()
+            delay = 2.0
+            time.sleep(delay)
+            payload = (self.count, now, delay, 0.05 * delay)
+            self.send(payload)
 
 
 class SwitchMonitor(multiprocessing.Process):
@@ -79,6 +100,7 @@ app = flask.Flask(__name__, static_url_path='')
 def root():
     return app.send_static_file('index.html')
 
+proc = None
 q = multiprocessing.Queue(maxsize=16)
 
 @app.route('/monitor')
@@ -88,6 +110,12 @@ def monitor():
         return flask.jsonify(count=count, t=t, dt1=dt1, dt2=dt2)
     except queue.Empty:
         return flask.jsonify({})
+
+@app.route('/reset')
+def reset():
+    print('Parenting sending reset')
+    proc.reset()
+    return ''
 
 
 def main():
@@ -100,17 +128,18 @@ def main():
     args = parser.parse_args()
 
     # Initialize the background process to monitor the rowing machine.
+    global proc
     if args.test:
-        p = Simulator(q)
+        proc = Simulator(q)
     else:
         try:
             # Use GPIO to monitor the rowing machine.
             import RPi.GPIO as GPIO
-            p = SwitchMonitor(q)
+            proc = SwitchMonitor(q)
         except ImportError:
             print('Cannot import GPIO library. Are you running on a raspberry pi?')
             return -1
-    p.start()
+    proc.start()
 
     # Start the web server.
     host,  port = (None, None) if args.test else ('0.0.0.0', 80)
