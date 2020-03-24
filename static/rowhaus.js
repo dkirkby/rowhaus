@@ -82,7 +82,7 @@ function reset() {
 function run() {
     reset();
     $("#reset").click(reset);
-    let fetcher = setInterval(fetch, 1000);
+    let fetcher = setInterval(fetch, 500);
     let timer = setInterval(update_time, 1000);
 }
 

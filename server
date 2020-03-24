@@ -8,6 +8,11 @@ import queue
 
 import flask
 
+try:
+    import RPi.GPIO as GPIO
+except ImportError:
+    pass
+
 
 class RowerProcess(multiprocessing.Process):
     """Base class for a subprocess to read and transmit rowing machine state.
@@ -122,8 +127,6 @@ def main():
         proc = Simulator(q)
     else:
         try:
-            # Use GPIO to monitor the rowing machine.
-            import RPi.GPIO as GPIO
             proc = SwitchMonitor(q)
         except ImportError:
             print('Cannot import GPIO library. Are you running on a raspberry pi?')
