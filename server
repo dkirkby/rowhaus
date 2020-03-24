@@ -54,18 +54,14 @@ class Simulator(RowerProcess):
             self.send(payload)
 
 
-class SwitchMonitor(multiprocessing.Process):
+class SwitchMonitor(RowerProcess):
 
     def __init__(self, queue):
-        multiprocessing.Process.__init__(self)
-        self.exit = multiprocessing.Event()
-        self.queue = queue
+        RowerProcess.__init__(self, queue)
         self.SWITCH = 5
         GPIO.setmode(GPIO.BOARD)
         # Channel has a hardware pullup.
         GPIO.setup(self.SWITCH, GPIO.IN)
-
-        self.count = 0
         self.last_time = [0, time.time()]
         self.last_state = -1
 
@@ -77,21 +73,14 @@ class SwitchMonitor(multiprocessing.Process):
         if new_state == 1 and self.last_state == 0:
             # Calculate elapsed times.
             payload = self.count, new_time, new_time - self.last_time[1], new_time - self.last_time[0]
-            if self.queue.full():
-                self.queue.get()
-            self.queue.put(payload)
-            self.count += 1
+            self.send(payload)
         self.last_time[new_state] = new_time
         self.last_state = new_state
 
     def run(self):
         GPIO.add_event_detect(self.SWITCH, GPIO.BOTH, callback=self.edge, bouncetime=1)
-        while not self.exit.is_set():
-            time.sleep(10)
-        self.queue.close()
-
-    def shutdown(self):
-        self.exit.set()
+        while True:
+            time.sleep(600)
 
 
 app = flask.Flask(__name__, static_url_path='')
