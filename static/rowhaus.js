@@ -6,6 +6,11 @@ const max_history = 100;
 const avg_cycles = 6;
 var graph_data = null;
 var graph = null;
+var graph_options = {
+    title: null,
+    legend: 'none'
+};
+
 
 function zeropad(value) {
     return (value < 10) ? "0" + value : "" + value;
@@ -34,8 +39,8 @@ function update_data(data) {
         let spm = 30 * avg_cycles / sum;
         $("#SPM").text(spm.toFixed(1));
         // Update the graph.
-        graph_data.push({x: count, y: spm});
-        graph.render();
+        graph_data.addRow([count, spm]);
+        graph.draw(graph_data, graph_options);
     }
 }
 
@@ -66,21 +71,28 @@ function reset() {
             $("#COUNT").text('0');
             $("#SPM").text('0.0');
             dt1_history = [];
-            graph_data = [];
-            graph = new CanvasJS.Chart("graph", {
-                theme: "light2",
-                data: [{
-                    type: "line",
-                    dataPoints: graph_data
-                }]
-            });
+            if(graph_data != null) {
+                graph_data.removeRows(0, graph_data.getNumberOfRows());
+                graph.draw(graph_data, graph_options);
+            }
         }
     });
     console.log('reset at', start_time);
 }
 
+function init_graph() {
+    graph_data = new google.visualization.DataTable();
+    graph_data.addColumn('number', 'Stroke');
+    graph_data.addColumn('number', 'SPM');
+    graph = new google.visualization.LineChart(document.getElementById('graph'));
+    graph.draw(graph_data, graph_options);
+}
+
 function run() {
     reset();
+    // Load the Visualization API and the corechart package.
+    google.charts.load('current', {'packages':['corechart']});
+    google.charts.setOnLoadCallback(init_graph);
     $("#reset").click(reset);
     let fetcher = setInterval(fetch, 500);
     let timer = setInterval(update_time, 1000);
