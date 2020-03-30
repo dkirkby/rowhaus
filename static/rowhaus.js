@@ -1,9 +1,8 @@
 var start_time = null;
 var count = null;
-var last_dt1 = null;
-var dt1_history = null;
-const max_history = 100;
-const avg_cycles = 6;
+var stack = null;
+const max_stack = 20;
+const max_age = 10; // only use data more recent than this for current stats, in seconds
 var graph_data = null;
 var graph = null;
 var graph_options = {
@@ -13,50 +12,53 @@ var graph_options = {
 var gauge_data = null;
 var gauge = null;
 var gauge_options = {
-    height: 128, width: 128,
     min: 0, max: 40,
     redFrom: 30, redTo: 40,
     yellowFrom: 20, yellowTo: 30,
     minorTicks: 5
 };
-
+var resetting = false;
 
 function zeropad(value) {
     return (value < 10) ? "0" + value : "" + value;
 }
 
 function update_time() {
-    let t = new Date() - start_time;
-    $("#hours").text(zeropad(Math.floor( (t/(1000*60*60)) % 24)));
-    $("#mins").text(zeropad(Math.floor( (t/1000/60) % 60)));
-    $("#secs").text(zeropad(Math.floor( (t/1000) % 60)));
+    if(resetting) return;
+    let tnow = new Date();
+    let elapsed = (tnow - start_time) / 1000;
+    $("#hours").text(zeropad(Math.floor( (elapsed/(60*60)) % 24)));
+    $("#mins").text(zeropad(Math.floor( (elapsed/60) % 60)));
+    $("#secs").text(zeropad(Math.floor( elapsed % 60)));
+    // Calculate summary statistics from the stored stack.
+    let nwindow = 0;
+    for(let i = stack.length - 1; i >= 0; i--) {
+        let age = (tnow - stack[i].timestamp) / 1000;
+        if(age > max_age) break;
+        nwindow++;
+    }
+    let spm = 30 * nwindow / max_age;
+    // Update the graph.
+    graph_data.addRow([count, spm]);
+    graph.draw(graph_data, graph_options);
+    // Update the gauge.
+    gauge_data.setValue(0, 1, spm);
+    gauge.draw(gauge_data, gauge_options);
 }
 
 function update_data(data) {
     count++;
     $("#COUNT").text(Math.round(count/2, 0));
-    if(dt1_history.length == avg_cycles) {
+    while(stack.length >= max_stack) {
         // Remove the oldest entry from the front.
-        dt1_history.shift();
+        stack.shift();
     }
     // Append the newest entry to the end.
-    dt1_history.push(data.dt1);
-    if(dt1_history.length >= avg_cycles) {
-        // Use the recent cycles to calculate the running SPM.
-        let sum = dt1_history.slice(-avg_cycles).reduce(
-            (acc, val) => acc + val, 0);
-        let spm = 30 * avg_cycles / sum;
-        $("#SPM").text(spm.toFixed(1));
-        // Update the graph.
-        graph_data.addRow([count, spm]);
-        graph.draw(graph_data, graph_options);
-        // Update the gauge.
-        gauge_data.setValue(0, 1, spm);
-        gauge.draw(gauge_data, gauge_options);
-    }
+    stack.push(data);
 }
 
 function fetch() {
+    if(resetting) return;
     // Look for new data.
     $.ajax({
         url: 'monitor',
@@ -64,6 +66,7 @@ function fetch() {
         timeout: 250,
         success: function(data) {
             if(data.dt1 != undefined) {
+                data.timestamp = new Date();
                 update_data(data);
             }
         },
@@ -74,22 +77,24 @@ function fetch() {
 }
 
 function reset() {
+    if(resetting) return;
+    resetting = true;
     $.get({
         url: 'reset',
         success: function(data) {
+            stack = [];
             start_time = new Date();
-            update_time();
-            count = 0;
-            $("#COUNT").text('0');
-            $("#SPM").text('0.0');
-            dt1_history = [];
             if(graph_data != null) {
                 graph_data.removeRows(0, graph_data.getNumberOfRows());
                 graph.draw(graph_data, graph_options);
             }
+            update_time();
+            count = 0;
+            $("#COUNT").text('0');
+            console.log('reset at', start_time);
+            resetting = false;
         }
     });
-    console.log('reset at', start_time);
 }
 
 function init_graph() {
@@ -113,7 +118,7 @@ function run() {
     google.charts.setOnLoadCallback(init_graph);
     $("#reset").click(reset);
     let fetcher = setInterval(fetch, 500);
-    let timer = setInterval(update_time, 1000);
+    let timer = setInterval(update_time, 500);
 }
 
 $(document).ready(run);
