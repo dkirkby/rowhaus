@@ -10,6 +10,15 @@ var graph_options = {
     title: null,
     legend: 'none'
 };
+var gauge_data = null;
+var gauge = null;
+var gauge_options = {
+    height: 128, width: 128,
+    min: 0, max: 40,
+    redFrom: 30, redTo: 40,
+    yellowFrom: 20, yellowTo: 30,
+    minorTicks: 5
+};
 
 
 function zeropad(value) {
@@ -41,6 +50,9 @@ function update_data(data) {
         // Update the graph.
         graph_data.addRow([count, spm]);
         graph.draw(graph_data, graph_options);
+        // Update the gauge.
+        gauge_data.setValue(0, 1, spm);
+        gauge.draw(gauge_data, gauge_options);
     }
 }
 
@@ -86,12 +98,18 @@ function init_graph() {
     graph_data.addColumn('number', 'SPM');
     graph = new google.visualization.LineChart(document.getElementById('graph'));
     graph.draw(graph_data, graph_options);
+    gauge_data = google.visualization.arrayToDataTable([
+        ['Label', 'Value'],
+        ['SPM', 0]
+    ]);
+    gauge = new google.visualization.Gauge(document.getElementById('gauge'));
+    gauge.draw(gauge_data, gauge_options);
 }
 
 function run() {
     reset();
     // Load the Visualization API and the corechart package.
-    google.charts.load('current', {'packages':['corechart']});
+    google.charts.load('current', {'packages':['corechart', 'gauge']});
     google.charts.setOnLoadCallback(init_graph);
     $("#reset").click(reset);
     let fetcher = setInterval(fetch, 500);
