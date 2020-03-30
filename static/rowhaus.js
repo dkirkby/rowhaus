@@ -1,13 +1,14 @@
 var start_time = null;
 var count = null;
 var stack = null;
-const max_stack = 20;
-const max_age = 10; // only use data more recent than this for current stats, in seconds
+const max_stack = 64;
+const max_age = 30; // only use data more recent than this for current stats, in seconds
 var graph_data = null;
 var graph = null;
 var graph_options = {
     title: null,
-    legend: 'none'
+    legend: 'none',
+    hAxis: { format: 'h:mm' }
 };
 var gauge_data = null;
 var gauge = null;
@@ -25,21 +26,22 @@ function zeropad(value) {
 
 function update_time() {
     if(resetting) return;
-    let tnow = new Date();
-    let elapsed = (tnow - start_time) / 1000;
+    let now = new Date();
+    let tnow = now.getTime() / 1000;
+    let elapsed = tnow - start_time;
     $("#hours").text(zeropad(Math.floor( (elapsed/(60*60)) % 24)));
     $("#mins").text(zeropad(Math.floor( (elapsed/60) % 60)));
     $("#secs").text(zeropad(Math.floor( elapsed % 60)));
     // Calculate summary statistics from the stored stack.
     let nwindow = 0;
     for(let i = stack.length - 1; i >= 0; i--) {
-        let age = (tnow - stack[i].timestamp) / 1000;
+        let age = tnow - stack[i].t;
         if(age > max_age) break;
         nwindow++;
     }
     let spm = 30 * nwindow / max_age;
     // Update the graph.
-    graph_data.addRow([count, spm]);
+    graph_data.addRow([now, spm]);
     graph.draw(graph_data, graph_options);
     // Update the gauge.
     gauge_data.setValue(0, 1, spm);
@@ -66,7 +68,6 @@ function fetch() {
         timeout: 250,
         success: function(data) {
             if(data.dt1 != undefined) {
-                data.timestamp = new Date();
                 update_data(data);
             }
         },
@@ -83,7 +84,7 @@ function reset() {
         url: 'reset',
         success: function(data) {
             stack = [];
-            start_time = new Date();
+            start_time = new Date().getTime() / 1000;
             if(graph_data != null) {
                 graph_data.removeRows(0, graph_data.getNumberOfRows());
                 graph.draw(graph_data, graph_options);
@@ -99,7 +100,7 @@ function reset() {
 
 function init_graph() {
     graph_data = new google.visualization.DataTable();
-    graph_data.addColumn('number', 'Stroke');
+    graph_data.addColumn('date', 'Time');
     graph_data.addColumn('number', 'SPM');
     graph = new google.visualization.LineChart(document.getElementById('graph'));
     graph.draw(graph_data, graph_options);
