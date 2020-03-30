@@ -4,3 +4,16 @@
 .alignright {
     text-align: right;
 }
+.rowhaus-layout {
+    background: url('rowing-overhead.jpg') center / cover;
+}
+#header {
+    font-size: x-large;
+}
+#graph {
+    width: 100%;
+    height: 500px;
+}
+#footer {
+    font-size: large;
+}
