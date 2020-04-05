@@ -51,11 +51,11 @@ class Simulator(RowerProcess):
 
     def run(self):
         # Generate a continuous stream of periodic updates.
-        delay = 2.0
         while True:
-            time.sleep(delay)
-            payload = (self.count, time.time(), delay, 0.05 * delay)
-            self.send(payload)
+            for delay in (1.5, 2.5):
+                time.sleep(delay)
+                payload = (self.count, time.time(), delay, 0.05 * delay)
+                self.send(payload)
 
 
 class SwitchMonitor(RowerProcess):

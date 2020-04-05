@@ -2,13 +2,14 @@ var start_time = null;
 var count = null;
 var stack = null;
 const max_stack = 64;
-const max_age = 30; // only use data more recent than this for current stats, in seconds
+const max_age = 10; // only use data more recent than this for current stats, in seconds
 var graph_data = null;
 var graph = null;
 var graph_options = {
     title: null,
     legend: 'none',
-    hAxis: { format: 'h:mm' }
+    hAxis: { format: 'h:mm' },
+    chartArea: {width: '90%', height: '95%' }
 };
 var gauge_data = null;
 var gauge = null;
@@ -33,13 +34,22 @@ function update_time() {
     $("#mins").text(zeropad(Math.floor( (elapsed/60) % 60)));
     $("#secs").text(zeropad(Math.floor( elapsed % 60)));
     // Calculate summary statistics from the stored stack.
-    let nwindow = 0;
+    let nwindow = 0, ncycle = 0;
+    let first = null, last = null;
     for(let i = stack.length - 1; i >= 0; i--) {
         let age = tnow - stack[i].t;
         if(age > max_age) break;
+        if(last == null) last = stack[i].t;
+        if(nwindow % 2 == 0) {
+            first = stack[i].t;
+            if(nwindow > 0) ncycle++;
+        }
         nwindow++;
     }
-    let spm = 30 * nwindow / max_age;
+    let spm = 0;
+    if(ncycle > 0) {
+        spm = 60 * ncycle / (last - first);
+    }
     // Update the graph.
     graph_data.addRow([now, spm]);
     graph.draw(graph_data, graph_options);
