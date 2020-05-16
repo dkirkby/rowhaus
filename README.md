@@ -15,5 +15,6 @@ conda create -n rowhhaus python=3.7 pip ipython flask
 To manually start the server:
 ```
 ssh pi@rowhaus.local
+$ cd rowhaus
 $ nohup sudo ./server &
 ```
