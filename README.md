@@ -9,3 +9,11 @@ To create a testing conda environment:
 ```
 conda create -n rowhhaus python=3.7 pip ipython flask
 ```
+
+## Running
+
+To manually start the server:
+```
+ssh pi@rowhaus.local
+$ nohup sudo ./server &
+```
