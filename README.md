@@ -1,14 +1,6 @@
 # rowhaus
-Rowing machine UI
 
-## Installation
-
-The only external dependency for testing is flask.  On a raspberry pi you will also need the RPi.GPIO package.
-
-To create a testing conda environment:
-```
-conda create -n rowhaus python=3.7 pip ipython flask
-```
+A replacement front-end graphical user interface for the [Sunny SF-RW5515 rowing machine](https://www.amazon.com/Sunny-Health-Fitness-Magnetic-SF-RW5515/dp/B017HSNIEW).
 
 ## Hardware Setup
 
@@ -18,6 +10,18 @@ Remove the rowing machine display and disconnect the 2-pin header. Add jumper wi
 ![wiring diagram](static/rowhaus-wiring.jpg?raw=true)
 
 The two pins on the connector are identical so it does not matter which of the RPi pins you connect them to. Note how the RPi is connected securely to the rowing machine body with some nylon standoffs. You can also route the wiring through a hole in the body so the original display can be replaced (which is probably a good idea to keep dust out of the internal mechanism).
+
+## Software Setup
+
+The only external dependency are [flask]() and [RPi.GPIO](https://sourceforge.net/p/raspberry-gpio-python/wiki/Home/):
+```
+pip install 
+pip install RPi.GPIO
+```
+You also need to install this package:
+```
+git clone https://github.com/dkirkby/rowhaus.git
+```
 
 ## Running
 
@@ -37,3 +41,15 @@ ssh pi@rowhaus.local
 $ cd rowhaus
 $ nohup sudo ./server &
 ```
+
+## Software Development
+
+To develop and test this package on a non-RPi platform, create a suitable conda env:
+```
+conda create -n rowhaus python=3.7 pip ipython flask
+```
+To run the server in development mode:
+```
+./server --test --debug
+```
+This will simulate the periodic messages from the RPi and allow you to connect via http://127.0.0.1:5000/
