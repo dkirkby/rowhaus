@@ -122,7 +122,22 @@ function init_graph() {
     gauge.draw(gauge_data, gauge_options);
 }
 
+function loadWorkout(name) {
+    $.get({
+        url: 'workouts/' + name,
+        dataType: 'json',
+        success: function(workout) {
+            nsteps = workout.steps.length;
+            console.log('Loaded workout "' + workout.name + '" with ' + nsteps + ' steps.');
+        },
+        error: function(jqxhr, status) {
+            console.log('ERROR', status);
+        }
+    });
+}
+
 function run() {
+    // Perform an initial reset.
     reset();
     // Load the Visualization API and the corechart package.
     google.charts.load('current', {'packages':['corechart', 'gauge']});
@@ -130,6 +145,12 @@ function run() {
     $("#reset").click(reset);
     let fetcher = setInterval(fetch, 500);
     let timer = setInterval(update_time, 500);
+    // Parse any query string.
+    const urlParams = new URLSearchParams(window.location.search);
+    if(urlParams.has('workout')) {
+        // Load the requested workout.
+        loadWorkout(urlParams.get('workout'));
+    }
 }
 
 $(document).ready(run);

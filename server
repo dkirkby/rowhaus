@@ -5,6 +5,7 @@ import time
 import argparse
 import multiprocessing
 import queue
+import json
 
 import flask
 
@@ -92,6 +93,12 @@ app = flask.Flask(__name__, static_url_path='')
 @app.route('/')
 def root():
     return app.send_static_file('index.html')
+
+@app.route('/workouts/<name>')
+def workout(name):
+    with open('workouts/' + str(name) + '.json') as f:
+        content = json.load(f)
+        return flask.jsonify(content)
 
 proc = None
 q = multiprocessing.Queue(maxsize=16)
