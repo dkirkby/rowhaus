@@ -7,7 +7,7 @@ The only external dependency for testing is flask.  On a raspberry pi you will a
 
 To create a testing conda environment:
 ```
-conda create -n rowhhaus python=3.7 pip ipython flask
+conda create -n rowhaus python=3.7 pip ipython flask
 ```
 
 ## Hardware Setup
