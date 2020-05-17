@@ -12,11 +12,12 @@ conda create -n rowhhaus python=3.7 pip ipython flask
 
 ## Hardware Setup
 
-You will need a RaspberryPi with a wireless interface configured for your local network. Set the hostname to `rowhaus` if you want to use `rowhaus.local`.
+You will need a RaspberryPi with a wireless interface configured for your local network. Set the hostname to `rowhaus` so you can access the UI from any browser using http://rowhaus.local.
 
 Remove the rowing machine display and disconnect the 2-pin header. Add jumper wires from this header to the RPi as shown here:
+![wiring diagram](static/rowhaus-wiring.jpg?raw=true)
 
-The two pins on the connector are identical so it does not matter which of the RPi pins you connect them to. Note that the RPi is connected securely to the rowing machine body with some nylon standoffs. You can also route the wiring through a hole in the body so the original display can be replaced (which is probably a good idea to keep dust out of the internal mechanism).
+The two pins on the connector are identical so it does not matter which of the RPi pins you connect them to. Note how the RPi is connected securely to the rowing machine body with some nylon standoffs. You can also route the wiring through a hole in the body so the original display can be replaced (which is probably a good idea to keep dust out of the internal mechanism).
 
 ## Running
 
