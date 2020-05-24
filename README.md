@@ -39,7 +39,7 @@ To manually start the server:
 ```
 ssh pi@rowhaus.local
 $ cd rowhaus
-$ nohup sudo ./server &
+$ nohup sudo ./server > /home/pi/rowhaus/server.log &
 ```
 
 ## Software Development
@@ -53,3 +53,13 @@ To run the server in development mode:
 ./server --test --debug
 ```
 This will simulate the periodic messages from the RPi and allow you to connect via http://127.0.0.1:5000/
+
+To update the version on the RPi:
+```
+ssh -A pi@rowhaus.local
+$ ps aux | fgrep python
+$ sudo kill N N+1
+$ cd rowhaus
+$ git pull
+$ nohup sudo ./server > /home/pi/rowhaus/server.log &
+```
