@@ -1,0 +1,44 @@
+<!doctype html>
+<html lang="">
+
+<head>
+  <meta charset="utf-8">
+  <title>RowHausDebug</title>
+  <meta name="description" content="">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <link rel="manifest" href="site.webmanifest">
+  <link rel="apple-touch-icon" href="icon.png">
+  <!-- Place favicon.ico in the root directory -->
+  <link rel="stylesheet" href="styles.css" />
+</head>
+
+<body>
+  <!--[if IE]>
+    <p class="browserupgrade">You are using an <strong>outdated</strong> browser. Please <a href="https://browsehappy.com/">upgrade your browser</a> to improve your experience and security.</p>
+  <![endif]-->
+
+  <!-- Add your site or application content here -->
+  <h3>RowHaus Debugger</h3>
+  <p>
+    You should see one line added below each time the seat moves forwards or backwards over the
+    magnetic sensor.  If you do not see any entries, try disconnecting the jumper wires from
+    the rowing machine 2-pin connector and briefly touch them together to simulate the magnetic sensor.
+    The data fields are:
+    <ul>
+        <li>count: The number of sensor pulses since the server on the RPi started. This should increment by one each time.</li>
+        <li>dt1: the duration of the sensor pulse in milliseconds, which measures how fast the seat is moving when it passes the sensor.</li>
+        <li>dt2: the elapsed time since the last sensor pulse in milliseconds, which measures the stroke rate.</li>
+        <li>t: the server unix timestamp for this sensor pulse.</li>
+    </ul>
+    Values are rounded to three decimals in the printout below.
+  </p>
+  <div id="debug">
+  </div>
+
+  <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.4.1/jquery.min.js"></script>
+  <script src="rowhaus.js"></script>
+
+</body>
+
+</html>

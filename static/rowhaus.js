@@ -136,20 +136,50 @@ function loadWorkout(name) {
     });
 }
 
+function debugfetch() {
+    if(resetting) return;
+    // Look for new data.
+    $.ajax({
+        url: 'monitor',
+        dataType: 'json',
+        timeout: 250,
+        success: function(data) {
+            if(data.count != undefined) {
+                //console.log(data);
+                let line = $("<div>").text(
+                    "count=" + data.count +
+                    ", dt1=" + data.dt1.toFixed(3) +
+                    ", dt2=" + data.dt2.toFixed(3) +
+                    ", t=" + data.t.toFixed(3));
+                line.appendTo("div#debug");
+            }
+        },
+        error: function(jqxhr, status) {
+            console.log('ERROR', status);
+        }
+    });
+}
+
 function run() {
     // Perform an initial reset.
     reset();
-    // Load the Visualization API and the corechart package.
-    google.charts.load('current', {'packages':['corechart', 'gauge']});
-    google.charts.setOnLoadCallback(init_graph);
-    $("#reset").click(reset);
-    let fetcher = setInterval(fetch, 500);
-    let timer = setInterval(update_time, 500);
-    // Parse any query string.
-    const urlParams = new URLSearchParams(window.location.search);
-    if(urlParams.has('workout')) {
-        // Load the requested workout.
-        loadWorkout(urlParams.get('workout'));
+    // Are we debugging?
+    if($("div#debug").length) {
+        setInterval(debugfetch, 500);
+    }
+    else {
+        // Load the Visualization API and the corechart package.
+        google.charts.load('current', {'packages':['corechart', 'gauge']});
+        google.charts.setOnLoadCallback(init_graph);
+        $("#reset").click(reset);
+        let fetcher = setInterval(fetch, 500);
+        let timer = setInterval(update_time, 500);
+        // Parse any query string.
+        const urlParams = new URLSearchParams(window.location.search);
+        if(urlParams.has('workout')) {
+            // Load the requested workout.
+            loadWorkout(urlParams.get('workout'));
+        }
     }
 }
 
