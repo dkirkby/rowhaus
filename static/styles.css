@@ -21,6 +21,12 @@
 #footer {
     font-size: large;
 }
+div#workout {
+    margin: 16px;
+    padding: 16px;
+    border: solid 1px red;
+    color: red;
+}
 div#debug {
     font-family: "Lucida Sans Typewriter", "Lucida Console", monaco, "Bitstream Vera Sans Mono", monospace;
     font-size: 12px;

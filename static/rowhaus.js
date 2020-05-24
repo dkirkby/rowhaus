@@ -20,6 +20,9 @@ var gauge_options = {
     minorTicks: 5
 };
 var resetting = false;
+var theWorkout = null;
+var workoutStepIndex = 0;
+var workoutStepStart = 0;
 
 function zeropad(value) {
     return (value < 10) ? "0" + value : "" + value;
@@ -56,6 +59,36 @@ function update_time() {
     // Update the gauge.
     gauge_data.setValue(0, 1, spm);
     gauge.draw(gauge_data, gauge_options);
+    if(theWorkout != null) {
+        // Update the workout.
+        let elapsed = tnow - workoutStepStart;
+        let stepResistance = theWorkout.steps[workoutStepIndex][0];
+        let stepDuration = theWorkout.steps[workoutStepIndex][1];
+        while(elapsed > stepDuration) {
+            elapsed -= stepDuration;
+            workoutStepIndex += 1;
+            if(workoutStepIndex >= theWorkout.steps.length) {
+                // Workout is done.
+                $("#workout").text("Workout Completed!");
+                theWorkout = null;
+                break;
+            }
+            workoutStepStart = tnow - elapsed;
+            stepDuration = theWorkout.steps[workoutStepIndex][1];
+            stepResistance = theWorkout.steps[workoutStepIndex][0];
+        }
+        if(theWorkout != null) {
+            $("#workout-step").text(workoutStepIndex + 1);
+            $("#workout-resistance").text(stepResistance);
+            $("#workout-remaining").text((stepDuration - elapsed).toFixed(0));
+            if(workoutStepIndex < theWorkout.steps.length - 1) {
+            $("#workout-next").text(theWorkout.steps[workoutStepIndex + 1][0]);
+            }
+            else {
+            $("#workout-next").text("Done!");
+            }
+        }
+    }
 }
 
 function update_data(data) {
@@ -129,6 +162,12 @@ function loadWorkout(name) {
         success: function(workout) {
             nsteps = workout.steps.length;
             console.log('Loaded workout "' + workout.name + '" with ' + nsteps + ' steps.');
+            $("#workout-name").text(workout.name);
+            $("#workout-nsteps").text(nsteps);
+            theWorkout = workout;
+            workoutStepIndex = 0;
+            let now = new Date();
+            workoutStepStart = now.getTime() / 1000;
         },
         error: function(jqxhr, status) {
             console.log('ERROR', status);
