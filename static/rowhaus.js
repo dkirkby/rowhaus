@@ -1,3 +1,4 @@
+var client_id = null;
 var start_time = null;
 var count = null;
 var stack = null;
@@ -200,6 +201,9 @@ function debugfetch() {
 }
 
 function run() {
+    // Generate our client id which is just the current time with ms resolution.
+    client_id = Date.now();
+    console.log('client_id', client_id);
     // Perform an initial reset.
     reset();
     // Are we debugging?
