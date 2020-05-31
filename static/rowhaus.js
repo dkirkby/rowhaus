@@ -17,14 +17,7 @@ var graph_options = {
     hAxis: { format: 'h:mm' },
     chartArea: {width: '90%', height: '95%' }
 };
-var gauge_data = null;
-var gauge = null;
-var gauge_options = {
-    min: 0, max: 40,
-    redFrom: 30, redTo: 40,
-    yellowFrom: 20, yellowTo: 30,
-    minorTicks: 5
-};
+
 var theWorkout = null;
 var workoutStepIndex = 0;
 var workoutStepStart = 0;
@@ -58,12 +51,10 @@ function update_time() {
     if(ncycle > 0) {
         spm = 60 * ncycle / (last - first);
     }
+    $("#SPM").text(spm.toFixed(1));
     // Update the graph.
     graph_data.addRow([now, spm]);
     graph.draw(graph_data, graph_options);
-    // Update the gauge.
-    gauge_data.setValue(0, 1, spm);
-    gauge.draw(gauge_data, gauge_options);
     if(theWorkout != null) {
         // Update the workout.
         let elapsed = tnow - workoutStepStart;
@@ -113,12 +104,6 @@ function init_graph() {
     graph_data.addColumn('number', 'SPM');
     graph = new google.visualization.LineChart(document.getElementById('graph'));
     graph.draw(graph_data, graph_options);
-    gauge_data = google.visualization.arrayToDataTable([
-        ['Label', 'Value'],
-        ['SPM', 0]
-    ]);
-    gauge = new google.visualization.Gauge(document.getElementById('gauge'));
-    gauge.draw(gauge_data, gauge_options);
 }
 
 function loadWorkout(name) {
@@ -230,7 +215,7 @@ function reset() {
                 count = 0;
                 $("#COUNT").text('0');
                 // Load the Visualization API and the corechart package.
-                google.charts.load('current', {'packages':['corechart', 'gauge']});
+                google.charts.load('current', {'packages':['corechart']});
                 google.charts.setOnLoadCallback(init_graph);
                 $("#reset").click(reset);
                 fetcher = setInterval(fetch, 500);
