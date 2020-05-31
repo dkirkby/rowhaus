@@ -1,4 +1,9 @@
-var client_id = null;
+var clientID = null;
+var urlParams = null;
+var resetting = false;
+var fetcher = null;
+var timer = null;
+
 var start_time = null;
 var count = null;
 var stack = null;
@@ -20,7 +25,6 @@ var gauge_options = {
     yellowFrom: 20, yellowTo: 30,
     minorTicks: 5
 };
-var resetting = false;
 var theWorkout = null;
 var workoutStepIndex = 0;
 var workoutStepStart = 0;
@@ -103,45 +107,6 @@ function update_data(data) {
     stack.push(data);
 }
 
-function fetch() {
-    if(resetting) return;
-    // Look for new data.
-    $.ajax({
-        url: 'monitor',
-        dataType: 'json',
-        timeout: 250,
-        success: function(data) {
-            if(data.dt1 != undefined) {
-                update_data(data);
-            }
-        },
-        error: function(jqxhr, status) {
-            console.log('ERROR', status);
-        }
-    });
-}
-
-function reset() {
-    if(resetting) return;
-    resetting = true;
-    $.get({
-        url: 'reset',
-        success: function(data) {
-            stack = [];
-            start_time = new Date().getTime() / 1000;
-            if(graph_data != null) {
-                graph_data.removeRows(0, graph_data.getNumberOfRows());
-                graph.draw(graph_data, graph_options);
-            }
-            update_time();
-            count = 0;
-            $("#COUNT").text('0');
-            console.log('reset at', start_time);
-            resetting = false;
-        }
-    });
-}
-
 function init_graph() {
     graph_data = new google.visualization.DataTable();
     graph_data.addColumn('date', 'Time');
@@ -171,6 +136,31 @@ function loadWorkout(name) {
             workoutStepStart = now.getTime() / 1000;
         },
         error: function(jqxhr, status) {
+            console.log('WORKOUTS ERROR', status);
+        }
+    });
+}
+
+function fetch() {
+    if(resetting) return;
+    // Look for new data.
+    $.ajax({
+        url: 'monitor/' + clientID,
+        dataType: 'json',
+        timeout: 250,
+        success: function(data) {
+            if(data.dt1 != undefined) {
+                update_data(data);
+            }
+            else if(data.busy != undefined) {
+                clearInterval(fetcher);
+                fetcher = null;
+                clearInterval(timer);
+                timer = null;
+                alert("Server is busy with " + data.busy);
+            }
+        },
+        error: function(jqxhr, status) {
             console.log('ERROR', status);
         }
     });
@@ -180,12 +170,11 @@ function debugfetch() {
     if(resetting) return;
     // Look for new data.
     $.ajax({
-        url: 'monitor',
+        url: 'monitor/' + clientID,
         dataType: 'json',
         timeout: 250,
         success: function(data) {
             if(data.count != undefined) {
-                //console.log(data);
                 let line = $("<div>").text(
                     "count=" + data.count +
                     ", dt1=" + data.dt1.toFixed(3) +
@@ -193,37 +182,82 @@ function debugfetch() {
                     ", t=" + data.t.toFixed(3));
                 line.appendTo("div#debug");
             }
+            else if(data.busy != undefined) {
+                clearInterval(fetcher);
+                fetcher = null;
+                alert("Server is busy with " + data.busy);
+            }
         },
         error: function(jqxhr, status) {
-            console.log('ERROR', status);
+            console.log('MONITOR ERROR', status);
+        }
+    });
+}
+
+function reset() {
+    // Ignore a new reset request while we are still waiting for the response
+    // from an earlier one.
+    if(resetting) return;
+    resetting = true;
+    // Clear any existing interval timers.
+    if(fetcher != null) {
+        clearInterval(fetcher);
+        fetcher = null;
+    }
+    if(timer != null) {
+        clearInterval(timer);
+        timer = null;
+    }
+    // Send a reset request to the server.
+    $.get({
+        url: 'reset/' + clientID,
+        success: function(data) {
+            console.log("Reset response:", data);
+            if(data.status == 'busy') {
+                alert("Server is busy with " + data.other);
+            }
+            else if($("div#debug").length) {
+                fetcher = setInterval(debugfetch, 500);
+            }
+            else {
+                stack = [];
+                start_time = new Date().getTime() / 1000;
+                if(graph_data != null) {
+                    graph_data.removeRows(0, graph_data.getNumberOfRows());
+                    graph.draw(graph_data, graph_options);
+                }
+                update_time();
+                count = 0;
+                $("#COUNT").text('0');
+                // Load the Visualization API and the corechart package.
+                google.charts.load('current', {'packages':['corechart', 'gauge']});
+                google.charts.setOnLoadCallback(init_graph);
+                $("#reset").click(reset);
+                fetcher = setInterval(fetch, 500);
+                timer = setInterval(update_time, 500);
+                if(urlParams.has('workout')) {
+                    // Load the requested workout.
+                    loadWorkout(urlParams.get('workout'));
+                }
+                console.log('reset at', start_time);
+            }
+            resetting = false;
+        },
+        error: function(jqxhr, status) {
+            console.log('RESET ERROR', status);
         }
     });
 }
 
 function run() {
     // Generate our client id which is just the current time with ms resolution.
-    client_id = Date.now();
-    console.log('client_id', client_id);
+    clientID = Date.now();
+    console.log('Generated clientID', clientID);
+    // Parse any query string.
+    urlParams = new URLSearchParams(window.location.search);
+    console.log('URL params', urlParams);
     // Perform an initial reset.
     reset();
-    // Are we debugging?
-    if($("div#debug").length) {
-        setInterval(debugfetch, 500);
-    }
-    else {
-        // Load the Visualization API and the corechart package.
-        google.charts.load('current', {'packages':['corechart', 'gauge']});
-        google.charts.setOnLoadCallback(init_graph);
-        $("#reset").click(reset);
-        let fetcher = setInterval(fetch, 500);
-        let timer = setInterval(update_time, 500);
-        // Parse any query string.
-        const urlParams = new URLSearchParams(window.location.search);
-        if(urlParams.has('workout')) {
-            // Load the requested workout.
-            loadWorkout(urlParams.get('workout'));
-        }
-    }
 }
 
 $(document).ready(run);

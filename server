@@ -107,19 +107,34 @@ def workout(name):
 proc = None
 q = multiprocessing.Queue(maxsize=16)
 
-@app.route('/monitor')
-def monitor():
+# Variables to support simple client session management.
+activeClientID = None
+lastClientActivity = None
+
+@app.route('/monitor/<clientID>')
+def monitor(clientID):
+    global activeClientID, lastClientActivity
+    if clientID != activeClientID:
+        print(f'Ignoring client "{clientID}" when busy with "{activeClientID}".')
+        return flask.jsonify(busy=activeClientID)
     try:
         count, t, dt1, dt2 = q.get(block=False)
         return flask.jsonify(count=count, t=t, dt1=dt1, dt2=dt2)
     except queue.Empty:
         return flask.jsonify({})
 
-@app.route('/reset')
-def reset():
-    print('Parent sending reset')
-    proc.reset()
-    return ''
+@app.route('/reset/<clientID>')
+def reset(clientID):
+    global activeClientID, lastClientActivity
+    print(f'Client "{clientID}" requests reset.')
+    if activeClientID in (clientID, None):
+        activeClientID = clientID
+        lastClientActivity = time.time()
+        proc.reset()
+        return flask.jsonify(status='ok')
+    else:
+        return flask.jsonify(status='busy', other=activeClientID)
+
 
 
 def main():
