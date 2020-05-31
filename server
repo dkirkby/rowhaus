@@ -109,7 +109,7 @@ q = multiprocessing.Queue(maxsize=16)
 
 # Variables to support simple client session management.
 activeClientID = None
-lastClientActivity = None
+lastClientActivity = 0
 
 @app.route('/monitor/<clientID>')
 def monitor(clientID):
@@ -117,6 +117,7 @@ def monitor(clientID):
     if clientID != activeClientID:
         print(f'Ignoring client "{clientID}" when busy with "{activeClientID}".')
         return flask.jsonify(busy=activeClientID)
+    lastClientActivity = time.time()
     try:
         count, t, dt1, dt2 = q.get(block=False)
         return flask.jsonify(count=count, t=t, dt1=dt1, dt2=dt2)
@@ -127,14 +128,15 @@ def monitor(clientID):
 def reset(clientID):
     global activeClientID, lastClientActivity
     print(f'Client "{clientID}" requests reset.')
-    if activeClientID in (clientID, None):
+    idleTime = time.time() - lastClientActivity
+    print(f'activeClientID={activeClientID} idleTime={idleTime:.1f}s')
+    if activeClientID in (clientID, None) or idleTime > 15:
         activeClientID = clientID
         lastClientActivity = time.time()
         proc.reset()
         return flask.jsonify(status='ok')
     else:
         return flask.jsonify(status='busy', other=activeClientID)
-
 
 
 def main():
