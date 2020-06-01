@@ -130,7 +130,8 @@ def reset(clientID):
     print(f'Client "{clientID}" requests reset.')
     idleTime = time.time() - lastClientActivity
     print(f'activeClientID={activeClientID} idleTime={idleTime:.1f}s')
-    if activeClientID in (clientID, None) or idleTime > 15:
+    # A previous client is considered idle after 5s of no requests.
+    if activeClientID in (clientID, None) or idleTime > 5:
         activeClientID = clientID
         lastClientActivity = time.time()
         proc.reset()

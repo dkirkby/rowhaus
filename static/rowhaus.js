@@ -58,7 +58,7 @@ function update_time() {
     if(theWorkout != null) {
         // Update the workout.
         let elapsed = tnow - workoutStepStart;
-        let stepResistance = theWorkout.steps[workoutStepIndex][0];
+        let stepTension = theWorkout.steps[workoutStepIndex][0];
         let stepDuration = theWorkout.steps[workoutStepIndex][1];
         while(elapsed > stepDuration) {
             elapsed -= stepDuration;
@@ -71,7 +71,7 @@ function update_time() {
             }
             workoutStepStart = tnow - elapsed;
             stepDuration = theWorkout.steps[workoutStepIndex][1];
-            stepResistance = theWorkout.steps[workoutStepIndex][0];
+            stepTension = theWorkout.steps[workoutStepIndex][0];
         }
         if(theWorkout != null) {
             $("#workout-step").text(workoutStepIndex + 1);
@@ -79,7 +79,7 @@ function update_time() {
             let w2 = (100 * elapsed / stepDuration).toFixed(1) + "%";
             console.log(w1, w2);
             $("#workoutProgress").css("width", w1);
-            $("#workout-resistance").text(stepResistance);
+            $("#workout-tension").text(stepTension);
             $("#workout-remaining").text((stepDuration - elapsed).toFixed(0));
             $("#stepProgress").css("width", w2);
             if(workoutStepIndex < theWorkout.steps.length - 1) {
@@ -124,6 +124,7 @@ function loadWorkout(name) {
             workoutStepIndex = 0;
             let now = new Date();
             workoutStepStart = now.getTime() / 1000;
+            $("#workout").css("display", "block");
         },
         error: function(jqxhr, status) {
             console.log('WORKOUTS ERROR', status);

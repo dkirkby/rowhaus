@@ -22,10 +22,14 @@
     font-size: large;
 }
 div#workout {
+    display: none;
     margin: 16px;
     padding: 16px;
     border: solid 1px red;
     color: red;
+}
+span#workout-right {
+    float: right;
 }
 div.progressContainer {
     width: 98%;
