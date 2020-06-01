@@ -27,6 +27,20 @@ div#workout {
     border: solid 1px red;
     color: red;
 }
+div.progressContainer {
+    width: 98%;
+    margin: 1%;
+    background-color: lightgray;
+    border: 1px solid black;
+    color: black;
+    font-size: 18px;
+    line-height: 24px;
+}
+div.progressBar {
+    width: 0%;
+    height: 24px;
+    background-color: red;
+}
 div#debug {
     font-family: "Lucida Sans Typewriter", "Lucida Console", monaco, "Bitstream Vera Sans Mono", monospace;
     font-size: 12px;

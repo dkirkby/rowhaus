@@ -75,13 +75,18 @@ function update_time() {
         }
         if(theWorkout != null) {
             $("#workout-step").text(workoutStepIndex + 1);
+            let w1 = (100 * (workoutStepIndex + 1) / theWorkout.steps.length).toFixed(1) + "%";
+            let w2 = (100 * elapsed / stepDuration).toFixed(1) + "%";
+            console.log(w1, w2);
+            $("#workoutProgress").css("width", w1);
             $("#workout-resistance").text(stepResistance);
             $("#workout-remaining").text((stepDuration - elapsed).toFixed(0));
+            $("#stepProgress").css("width", w2);
             if(workoutStepIndex < theWorkout.steps.length - 1) {
-            $("#workout-next").text(theWorkout.steps[workoutStepIndex + 1][0]);
+                $("#workout-next").text(theWorkout.steps[workoutStepIndex + 1][0]);
             }
             else {
-            $("#workout-next").text("Done!");
+                $("#workout-next").text("Done!");
             }
         }
     }
